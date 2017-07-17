@@ -1,10 +1,12 @@
 /* 
  * File: sws.c
- * Author: Alex Brodsky
+ * Author: Alex Brodsky.  Modified by Sean Mahoney
  * Purpose: This file contains the implementation of a simple web server.
- *          It consists of two functions: main() which contains the main 
- *          loop accept client connections, and serve_client(), which
- *          processes each client request.
+ *          It consists of three functions: main() which contains the main 
+ *          loop that accepts client connections, process_request(), which
+ *          gathers and stores information pertaining to each client request,
+ *          and sjf(), which uses the 'shortest job first algorithm' to 
+ *          service requests
  */
 
 #include <stdio.h>
@@ -15,6 +17,7 @@
 
 #define MAX_HTTP_SIZE 8192                 /* size of buffer to allocate */
 #define RCB_SIZE 50                           /*size of rcb[] */
+
 void process_request( int fd);
 void sjf();
 
@@ -31,14 +34,18 @@ struct requestTable{
 
 int request_num =0;                                   /*global sequence variable */
 
-/* This function is where the program starts running.
+/*    This function is where the program starts running.
  *    The function first parses its command line parameters to determine port #
- *    Then, it initializes, the network and enters the main loop.
- *    The main loop waits for a client (1 or more to connect, and then processes
- *    all clients by calling the seve_client() function for each one.
- * Parameters: 
- *             argc : number of command line parameters (including program name
+ *    and the user's choice of scheduler.  Then, it initializes, the network and
+ *    enters the main loop.  The main loop waits for a client (1 or more to connect),
+ *    and then processes all clients' information by calling the process_request() 
+ *    function for each one.  Next, depending on the user's input, it uses one of 
+ *    three shceduling algorithms to service each request. 
+ * 
+ *    Parameters: 
+ *             argc : number of command line parameters (including program name)
  *             argv : array of pointers to command line parameters
+ *           
  * Returns: an integer status code, 0 for success, something else for error.
  */
 int main( int argc, char **argv ) {
@@ -46,12 +53,12 @@ int main( int argc, char **argv ) {
   int fd;                                           /* client file descriptor */
  char scheduler[5]={0};                             /* type of scheduler
   
-  /* initialize the value of all elements in rcb[] to 0 or null*/
+  /* initialize the value of all elements in rcb[] to 0 or null */
 int i;
 for(i=0; i<RCB_SIZE; i++){
   rcb[i].sequence_num=0;                          /* sequence number of the request */          
-  rcb[i].file_descriptor=0;                                    /* file descriptor of the client*/
-  rcb[i].handle=NULL;                              /* file handle of the file being requested */
+  rcb[i].file_descriptor=0;                       /* file descriptor of the client*/
+  rcb[i].handle=NULL;                             /* file handle of the file being requested */
   rcb[i].bytes_remaining=0;                       /*number of bytes of the file that remain to be sent */
   rcb[i].quantum=0;                          
 }
@@ -77,7 +84,7 @@ for(i=0; i<RCB_SIZE; i++){
   }
 }
 
-/* This function takes a file handle to a client, reads in the request, 
+/* This function takes a file descriptor to a client, reads in the request, 
  *    parses the request, and acquires information about the request that 
  *    will required by the scheduler.  This information is stored in rcb[].
  *    If the request is improper or the file is not available, the appropriate
@@ -95,7 +102,7 @@ for(i=0; i<RCB_SIZE; i++){
   int index;                                        /* index for rcb[] */
 
   for(index=0; index<RCB_SIZE; index++){
-    if (rcb[index].sequence_num = 0)
+    if (rcb[index].sequence_num == 0)
       break;
   }
 
@@ -125,24 +132,26 @@ for(i=0; i<RCB_SIZE; i++){
   if( !req ) {                                      /* is req valid? */
     len = sprintf( buffer, "HTTP/1.1 400 Bad request\n\n" );
     write( fd, buffer, len );                       /* if not, send err */
-  } else {                                          /* if so, open file */
+  } 
+  else {                                          /* if so, open file */
     req++;                                          /* skip leading / */
     rcb[index].handle = fopen( req, "r" );                        /* open file */
     if( !rcb[index].handle ) {                                    /* check if successful */
       len = sprintf( buffer, "HTTP/1.1 404 File not found\n\n" );  
       write( fd, buffer, len );                     /* if not, send err */
-    } else {                                        /* if so, send success code */
-      write( fd, buffer, len ); 
+    } 
+    else {                                        /* if so, send success code */
       len = sprintf( buffer, "HTTP/1.1 200 OK\n\n" );/* send success code */
       write( fd, buffer, len );
 
-      fseek(rcb[index].file_descriptor, 0L, SEEK_END);
-rcb[index].bytes_remaining = ftell(rcb[index].file_descriptor);
+      //getting the size of the file requested 
+      fseek(rcb[index].handle, 0L, SEEK_END);
+rcb[index].bytes_remaining = ftell(rcb[index].handle);
 
-rewind(rcb[index].file_descriptor);
-      rcb[index].sequence_num = request_num;                             
+rewind(rcb[index].handle);
+  fclose(rcb[index].handle);   
+  rcb[index].sequence_num = request_num;                             
   rcb[index].file_descriptor = fd;
-  fclose(rcb[index].handle); 
   request_num++;                                                                
   }
 }
@@ -155,10 +164,10 @@ rewind(rcb[index].file_descriptor);
 
   void sjf() {
       int i; 
-      int index =1;
+      int index =0;
       
       /* find the request with the least amount of bytes*/
-      for(i=2; i<request_num; i++){
+      for(i=1; i<RCB_SIZE; i++){
         if (rcb[index].bytes_remaining > rcb[i].bytes_remaining && rcb[index].bytes_remaining>0 && rcb[i].bytes_remaining>0){
           index=i;
       }    
