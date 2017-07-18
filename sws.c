@@ -1,12 +1,14 @@
 /* 
  * File: sws.c
- * Author: Alex Brodsky.  Modified by Sean Mahoney
+ * Authors: Alex Brodsky.  Modified by Sean Mahoney and Will Wilson
  * Purpose: This file contains the implementation of a simple web server.
- *          It consists of three functions: main() which contains the main 
- *          loop that accepts client connections, process_request(), which
- *          gathers and stores information pertaining to each client request,
- *          and sjf(), which uses the 'shortest job first algorithm' to 
- *          service requests
+ *          It consists of five functions: 
+ *           Main() contains the main loop that accepts client connections.
+ *          process_request() gathers and stores information pertaining to 
+ *           each client request.
+ *          sjf() uses the 'shortest job first' algorithm to service requests.
+ *           roundRobin() uses the 'round robin' algorithm' to service requests.
+ *           ...multi level feedback....     
  */
 
 #include <stdio.h>
@@ -17,9 +19,11 @@
 
 #define MAX_HTTP_SIZE 8192                 /* size of buffer to allocate */
 #define RCB_SIZE 50                           /*size of rcb[] */
+#define roundByte 8192                      /* how many bytes are sent a round for round robin*/
 
 void process_request( int fd);
 void sjf();
+void roundRobin();
 
 /*An array of request control blocks, which contain information for each request*/
 struct requestTable{
@@ -27,9 +31,7 @@ struct requestTable{
   int file_descriptor;                                    /* file descriptor of the client*/
   FILE *handle;                              /* file handle of the file being requested */
   int bytes_remaining;                       /*number of bytes of the file that remain to be sent */
-  int quantum;                               /* max number of bytes to be sent when the request is serviced */
-} rcb[RCB_SIZE];
-
+  } rcb[RCB_SIZE];
 
 
 int request_num =0;                                   /*global sequence variable */
@@ -51,20 +53,18 @@ int request_num =0;                                   /*global sequence variable
 int main( int argc, char **argv ) {
   int port = -1;                                    /* server port # */
   int fd;                                           /* client file descriptor */
- char scheduler[5]={0};                             /* type of scheduler
+ char scheduler[5]={0};                             /* type of scheduler*/
   
   /* initialize the value of all elements in rcb[] to 0 or null */
 int i;
 for(i=0; i<RCB_SIZE; i++){
-  rcb[i].sequence_num=0;                          /* sequence number of the request */          
-  rcb[i].file_descriptor=0;                       /* file descriptor of the client*/
-  rcb[i].handle=NULL;                             /* file handle of the file being requested */
-  rcb[i].bytes_remaining=0;                       /*number of bytes of the file that remain to be sent */
-  rcb[i].quantum=0;                          
+  rcb[i].sequence_num=0;                                    
+  rcb[i].file_descriptor=0;                       
+  rcb[i].handle=NULL;                             
+  rcb[i].bytes_remaining=0;                                               
 }
 
-  /* check for and process parameters
-   */
+  /* check for and process parameters */
   if( ( argc < 3 ) || ( sscanf( argv[1], "%d", &port ) < 1 )|| sscanf(argv[2], "%s", scheduler )<1) {
     printf( "usage: sms <port>\n" );
     return 0;
@@ -75,11 +75,17 @@ for(i=0; i<RCB_SIZE; i++){
     network_wait();                                 /* wait for clients */
 
     for( fd = network_open(); fd >= 0; fd = network_open()) { /* get clients */
-      process_request(fd);
+      process_request(fd);                                     /* process each client */ 
       }
+
+      /* The requests are serviced by one of the three scheduling algorithms,
+      which is determined by the user's input at run time */
+
       if (strcmp(scheduler, "SJF") || strcmp(scheduler, "sjf")){
-        sjf();
-                               /* process each client */
+        sjf();                      
+    }
+      else if (strcmp(scheduler, "RR") || strcmp(scheduler, "rr")){
+        roundRobin();  
     }
   }
 }
@@ -172,7 +178,8 @@ rewind(rcb[index].handle);
           index=i;
       }    
   }
-      write( rcb[index].file_descriptor, rcb[index].handle, rcb[index].bytes_remaining);
+      if(write( rcb[index].file_descriptor, rcb[index].handle, rcb[index].bytes_remaining)<0)
+        printf("Error writing to socket");
       
       close(rcb[index].file_descriptor);                                     /* close client connection*/
 
@@ -180,8 +187,29 @@ rewind(rcb[index].handle);
       rcb[index].sequence_num=0;                                  
       rcb[index].file_descriptor=0;                   
       rcb[index].handle=NULL;                            
-      rcb[index].bytes_remaining=0;                     
-      rcb[index].quantum=0;
-      
+      rcb[index].bytes_remaining=0;                           
 }
+/* This function uses the 'Round Robin' algorithm to serve client requests. 
+ * Parameters: None
+ * Returns: None
+ */
 
+  void roundRobin() {
+    int i; 
+      
+     /* Cycle through the array*/
+    for(i=1; i<RCB_SIZE; i++){
+      if (rcb[i].bytes_remaining> roundByte) { // Does the current RCB need more than its allowed in a quantum?
+        write(rcb[i].file_descriptor, rcb[i].handle, roundByte ); //If so, only send it 8kb and move on.
+      } 
+      else {  // RCB at i is less than the remaining amount. Just send it that much data, then close it off
+        write(rcb[i].file_descriptor, rcb[i].handle, rcb[i].bytes_remaining); //Give it the last bytes. No reason to overflow/take up the entire quantum.
+        close(rcb[i].file_descriptor); //Close it off
+        //Delete it.
+        rcb[i].sequence_num=0;                                  
+        rcb[i].file_descriptor=0;                   
+        rcb[i].handle=NULL;                            
+        rcb[i].bytes_remaining=0;                     
+      }
+    }
+  }
