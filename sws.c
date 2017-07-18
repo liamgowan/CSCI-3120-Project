@@ -1,6 +1,6 @@
 /* 
  * File: sws.c
- * Author: Alex Brodsky.  Modified by Sean Mahoney
+ * Author: Alex Brodsky.  Modified by Sean Mahoney. He actually did all the work, I did minor edits -- Will
  * Purpose: This file contains the implementation of a simple web server.
  *          It consists of three functions: main() which contains the main 
  *          loop that accepts client connections, process_request(), which
@@ -17,9 +17,10 @@
 
 #define MAX_HTTP_SIZE 8192                 /* size of buffer to allocate */
 #define RCB_SIZE 50                           /*size of rcb[] */
+#define roundByte 8192                      /* how many bytes are sent a round*/
 
 void process_request( int fd);
-void sjf();
+void roundRobin();
 
 /*An array of request control blocks, which contain information for each request*/
 struct requestTable{
@@ -77,8 +78,8 @@ for(i=0; i<RCB_SIZE; i++){
     for( fd = network_open(); fd >= 0; fd = network_open()) { /* get clients */
       process_request(fd);
       }
-      if (strcmp(scheduler, "SJF") || strcmp(scheduler, "sjf")){
-        sjf();
+      if (strcmp(scheduler, "RR") || strcmp(scheduler, "rr")){
+        roundRobin();
                                /* process each client */
     }
   }
@@ -157,31 +158,28 @@ rewind(rcb[index].handle);
 }
 }
 
-/* This function uses the 'shortest job first' algorithm to serve client requests 
+/* This function uses the 'Round Robin' algorithm to serve client requests. I literally copied Sean's code. This feels like cheating.
  * Parameters: None
  * Returns: None
  */
 
-  void sjf() {
-      int i; 
-      int index =0;
+  void roundRobin() {
+    int i; 
+    int index =0;
       
-      /* find the request with the least amount of bytes*/
-      for(i=1; i<RCB_SIZE; i++){
-        if (rcb[index].bytes_remaining > rcb[i].bytes_remaining && rcb[index].bytes_remaining>0 && rcb[i].bytes_remaining>0){
-          index=i;
-      }    
-  }
-      write( rcb[index].file_descriptor, rcb[index].handle, rcb[index].bytes_remaining);
-      
-      close(rcb[index].file_descriptor);                                     /* close client connection*/
-
-      /* delete the request info from the RCB */
-      rcb[index].sequence_num=0;                                  
-      rcb[index].file_descriptor=0;                   
-      rcb[index].handle=NULL;                            
-      rcb[index].bytes_remaining=0;                     
-      rcb[index].quantum=0;
-      
-}
-
+     /* Cycle through the array, like the bitchmode thing it is.*/
+    for(i=1; i<RCB_SIZE; i++){
+      if (rcb[i].bytes_remaining> roundByte) { // Does the current RCB need more than its allowed in a quantum?
+        write(rcb[i].file_descriptor, rcb[i].handle, roundByte ); //If so, only send it 8kb and move on.
+      } else {  // RCB at i is less than the remaining amount. Just send it that much data, then close it off
+        write(rcb[i].file_descriptor, rcb[i].handle, rcb[i].bytes_remaining); //Give it the last bytes. No reason to overflow/take up the entire quantum.
+        close(rcb[i].file_descriptor); //Close it off
+        //Delete it.
+        rcb[i].sequence_num=0;                                  
+        rcb[i].file_descriptor=0;                   
+        rcb[i].handle=NULL;                            
+        rcb[i].bytes_remaining=0;                     
+        rcb[i].quantum=0;
+      }
+    }
+  }  
