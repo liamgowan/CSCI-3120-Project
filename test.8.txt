@@ -1,0 +1,10 @@
+Title: Test 8
+
+Group 12
+
+Purpose: To see how each algorithm performs when an 80 KB .txt file, a 2KB .txt file, and a 10 KB .txt file arrive at the same time. It also ensures that MLFB works as expected.
+
+How the test works: It reads in an 80 KB .txt file, a 2KB .txt file, and a 10 KB .txt file arrive at the same time on port 38080.
+
+Expected output for SJF:
+

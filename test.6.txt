@@ -1,0 +1,10 @@
+Title: Test 6
+
+Group 12
+
+Purpose: To see how each algorithm performs when a 20KB, a 10KB and a 12-byte .txt file arrive at the same time. It also ensures that RR works as expected.
+
+How the test works: It reads in a 20KB, a 10KB and a 12-byte .txt file at the same time on port 38080.
+
+Expected output for SJF:
+
