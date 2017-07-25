@@ -1,0 +1,10 @@
+Title: Test 6
+
+Group 12
+
+Purpose: To see how each algorithm performs when 5 20KB .txt files arrive 0.1 seconds after each other. It also ensures that RR works as expected.
+
+How the test works: It reads in 5 20 KB .txt files 0.1 seconds after each other on port 38080.
+
+Expected output for SJF:
+

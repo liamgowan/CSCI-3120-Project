@@ -1,0 +1,16 @@
+Title: Test 1 
+
+Group 12
+
+Purpose: To see how each algorithm performs when there is only one .txt file to read in.
+
+How the test works: It reads in one .txt file on port 38080.
+
+Expected output for all algorithms:
+
+Thread 1 ============================================
+HTTP/1.1 200 OK
+
+Hello World!
+=====================================================================
+Request completion order:  1 

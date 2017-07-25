@@ -1,0 +1,10 @@
+Title: Test 10
+
+Group 12
+
+Purpose: To see how each algorithm performs under extreme conditions. 
+
+How the test works: It reads in 9 text files of varying sizes 3 times in 0.5 second increments on port 38080.
+
+Expected output for SJF:
+
