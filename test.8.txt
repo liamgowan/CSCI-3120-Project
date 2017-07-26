@@ -7,4 +7,10 @@ Purpose: To see how each algorithm performs when an 80 KB .txt file, a 2KB .txt 
 How the test works: It reads in an 80 KB .txt file, a 2KB .txt file, and a 10 KB .txt file arrive at the same time on port 38080.
 
 Expected output for SJF:
+2, 3, 1
 
+Expected output for RR:
+2, 3, 1
+
+Expected output for MLFB:
+2, 3, 1

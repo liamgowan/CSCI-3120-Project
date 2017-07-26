@@ -7,4 +7,10 @@ Purpose: To see how each algorithm performs when an two different 200KB .txt fil
 How the test works: It reads in two 200KB .txt files at the same time on port 38080.
 
 Expected output for SJF:
+1, 2
 
+Expected output for RR:
+1, 2
+
+Expected output for MLFB:
+1, 2

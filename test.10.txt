@@ -7,4 +7,10 @@ Purpose: To see how each algorithm performs under extreme conditions.
 How the test works: It reads in 9 text files of varying sizes 3 times in 0.5 second increments on port 38080.
 
 Expected output for SJF:
+1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27
 
+Expected output for RR:
+1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27
+
+Expected output for MLFB:
+1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27

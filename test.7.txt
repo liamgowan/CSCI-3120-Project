@@ -7,4 +7,10 @@ Purpose: To see how each algorithm performs when 5 20KB .txt files arrive 0.1 se
 How the test works: It reads in 5 20 KB .txt files 0.1 seconds after each other on port 38080.
 
 Expected output for SJF:
+1, 2, 3, 4, 5
 
+Expected output for RR:
+1, 2, 3, 4, 5
+
+Expected output for MLFB:
+1, 2, 3, 4, 5

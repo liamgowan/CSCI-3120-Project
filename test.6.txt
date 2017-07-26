@@ -6,5 +6,13 @@ Purpose: To see how each algorithm performs when a 20KB, a 10KB and a 12-byte .t
 
 How the test works: It reads in a 20KB, a 10KB and a 12-byte .txt file at the same time on port 38080.
 
-Expected output for SJF:
+Expected order of completion for SJF:
+3, 2, 1
+
+Expected order of completion for RR:
+3, 2, 1
+
+Expected order of completion for MLFB:
+
+3, 2, 1
 
