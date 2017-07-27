@@ -1,0 +1,4 @@
+Sean Mahoney - SJF & Multithreading
+Will Willson - RR
+Aj Tarczy - MLFB & test cases
+Liam Gowan - MLFB & test cases
